@@ -1,6 +1,16 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow } = require('electron')
-const path = require('node:path')
+const {app, BrowserWindow} = require('electron')
+const path = require('path')
+
+// Create a local web server, for serving folder ./www
+const statik = require('@brettz9/node-static');
+const file = new statik.Server(`${__dirname}/www`, { cache: 0 })
+
+require('http').createServer(function (request, response) {
+    request.addListener('end', function () {
+        file.serve(request, response)
+    }).resume()
+}).listen(9990, "127.0.0.1");
 
 function createWindow () {
   // Create the browser window.
@@ -8,12 +18,13 @@ function createWindow () {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: true
     }
   })
 
   // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
+  mainWindow.loadURL('http://localhost:9990')
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
@@ -24,7 +35,7 @@ function createWindow () {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   createWindow()
-
+  
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
